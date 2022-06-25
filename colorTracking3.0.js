@@ -1,38 +1,35 @@
-let cam;
-
 // CONFIG
 const THRESHOLD = 15;
 
-//GLOBAL
+//GLOBAL VARIABLES
 let IS_FIRST_LOOP = true;
 let IGNORED_COLOR = { r: 0, g: 0, b: 0 };
 let CURRENT_SQUARE_COLORS = [undefined, undefined, undefined]; //{r:number, g: number, b: number}[3]
 const CURRENT_SQUARECOLOR_COORDS = [undefined, undefined, undefined]; //{x:number, y:number, pixelAmount: number}[3]
-
 let PINSEL_STATE = 0;
-
-const DRAWINGPLANE_X_BEGIN = 641;
+let CAM;
 
 // TIMESTAMPS
 let TIMESTAMP_0 = 0;
-let TIMESTAMP_1 = 0;
+
+//CONSTANTS
+const DRAWINGPLANE_X_BEGIN = 641;
+
 
 function setup() {
   createCanvas(640 * 2, 400);
+  
   leftBuffer = createGraphics(640, 400);
   rightBuffer = createGraphics(640, 400);
 
-  cam = createCapture(VIDEO);
-
-  cam.hide();
-  
+  CAM = createCapture(VIDEO);
+  CAM.hide();
 }
 
 function draw() {
-  // Draw on your buffers however you like
   drawLeftBuffer();
   drawRightBuffer();
-  // Paint the off-screen buffers onto the main canvas
+  
   image(leftBuffer, 0, 0);
   image(rightBuffer, 640, 0);
 }
@@ -63,7 +60,7 @@ function drawRightBuffer() {
 function drawLeftBuffer() {
   drawCamAndRects();
   //setIgnoredColor();
-  cam.loadPixels();
+  CAM.loadPixels();
 
   timeout_0(1250, () => {
     if (IS_FIRST_LOOP) {
@@ -172,16 +169,16 @@ function calcAverageCoordsForSquareColor(squareColor) {
   let avgX = 0;
   let avgY = 0;
 
-  for (let x = 0; x < cam.width; x += 3) {
-    for (let y = 0; y < cam.height; y += 3) {
-      if (cam.width - x < 205 && y < 100) {
+  for (let x = 0; x < CAM.width; x += 3) {
+    for (let y = 0; y < CAM.height; y += 3) {
+      if (CAM.width - x < 205 && y < 100) {
         continue;
       }
 
-      let index = (x + y * cam.width) * 4;
-      let r = cam.pixels[index + 0];
-      let g = cam.pixels[index + 1];
-      let b = cam.pixels[index + 2];
+      let index = (x + y * CAM.width) * 4;
+      let r = CAM.pixels[index + 0];
+      let g = CAM.pixels[index + 1];
+      let b = CAM.pixels[index + 2];
       let distance = dist(r, g, b, squareColor.r, squareColor.g, squareColor.b);
       if (distance < THRESHOLD + 30) {
         avgX += x;
@@ -193,7 +190,7 @@ function calcAverageCoordsForSquareColor(squareColor) {
 
   // Draw a circle at the tracked pixel
   //invert the x value because we mirrored the cam
-  avgX = cam.width - avgX / count;
+  avgX = CAM.width - avgX / count;
   avgY = avgY / count;
 
   fill(squareColor.r, squareColor.g, squareColor.b);
@@ -210,7 +207,7 @@ function drawCamAndRects() {
   // mirror and draw cam
   push();
   scale(-1, 1);
-  image(cam, -width / 2, 0);
+  image(CAM, -width / 2, 0);
   pop();
 
   // draw squares to track colors from
@@ -289,11 +286,12 @@ function pinsel_3(coords, color, size) {
     actualSize / 2,
     actualSize / 2
   );
-
   fill(color.r, color.g, color.b, 10);
   ellipse(coords.x + DRAWINGPLANE_X_BEGIN, coords.y, actualSize, actualSize);
 }
 
+
+// KEY/MOUSE handlers
 function keyPressed() {
   if (key === " ") {
     switch (PINSEL_STATE) {
@@ -311,8 +309,6 @@ function keyPressed() {
 }
 
 function mousePressed() {
-  if (mouseX > 0 && mouseX < 100 && mouseY > 0 && mouseY < 100) {
-    let fs = fullscreen();
-    fullscreen(!fs);
-  }
+  let fs = fullscreen();
+  fullscreen(!fs);
 }
